@@ -1,48 +1,33 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import pandas as pd
-import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import keras
-import math
-get_ipython().run_line_magic('matplotlib', 'inline')
+import locale
 
+locale.setlocale(locale.LC_ALL, "hu_HU")
 
-pd.set_option('display.html.table_schema', True) # to can see the dataframe/table as a html
-pd.set_option('display.precision', 5) 
-
-
-# In[2]:
-
+pd.set_option('display.html.table_schema', True)  # to can see the dataframe/table as a html
+pd.set_option('display.precision', 5)
 
 rawPath = "C:/DEV/hadoop/data.csv"
 
-
-# In[3]:
-
-
-rawData = pd.read_csv(rawPath, sep=';', header=0)
-rawData.replace(',','.', regex=True, inplace=True)
+rawData = pd.read_csv(rawPath, sep=';', header=0,
+                      dtype={
+                          "CurrentTime": object, "RouteID": object, "TripID": object,
+                          "ArrivalDiff": int, "DepartureDiff": int, "Temperature": float,
+                          "Humidity": int, "Preasure": float, "WindIntensity": float,
+                          "SnowIntesity": float, "RainIntensity": float
+                      }
+                      )
+rawData.replace(',', '.', regex=True, inplace=True)
 print("Beolvasás kész")
 
-
-# In[4]:
-
-
-#list(rawData)
-cleanData = rawData.drop(columns=['VeichleID', 'VeichleType', 'VeichleModel', 'VeichleLongitude', 'VeichleLatitude', 'StopID', 'StopSequance', 'PredictedDepartureTime', 'DepartureTime', 'TripStatus', 'ArrivalTime', 'PredictedArrivalTime'])
+cleanData = rawData.drop(
+    columns=['VeichleID', 'VeichleType', 'VeichleModel', 'VeichleLongitude', 'VeichleLatitude', 'StopID',
+             'StopSequance', 'PredictedDepartureTime', 'DepartureTime', 'TripStatus', 'ArrivalTime',
+             'PredictedArrivalTime'])
 print("Feleseges cellák törlve")
-#cleanData
 
-
-# In[5]:
-
-
-cleanData['CurrentTime'] = pd.to_datetime(cleanData['CurrentTime'], unit ='ms')
+cleanData['CurrentTime'] = pd.to_datetime(cleanData['CurrentTime'], unit='ms')
 cleanData['CurrentTime'] = cleanData['CurrentTime'].dt.hour
 cleanData['Temperature'] = pd.to_numeric(cleanData['Temperature'])
 cleanData['WindIntensity'] = pd.to_numeric(cleanData['WindIntensity'])
@@ -50,63 +35,51 @@ cleanData['RainIntensity'] = pd.to_numeric(cleanData['RainIntensity'])
 cleanData['SnowIntesity'] = pd.to_numeric(cleanData['SnowIntesity'])
 cleanData.head(10)
 
-
-# In[6]:
-
-
-aggregatedData = cleanData.groupby(['CurrentTime','RouteID','TripID']).agg({
-    'ArrivalDiff':'sum',
-    'DepartureDiff':'sum',
+aggregatedData = cleanData.groupby(['CurrentTime', 'RouteID', 'TripID']).agg({
+    'ArrivalDiff': 'mean',
+    'DepartureDiff': 'mean',
     'Temperature': 'mean',
     'WindIntensity': 'mean',
     'RainIntensity': 'mean',
     'SnowIntesity': 'mean',
 })
 
-
-# In[7]:
-
-
 aggregatedData['result'] = aggregatedData[['ArrivalDiff', 'DepartureDiff']].mean(axis=1)
-aggregatedData['result'] = aggregatedData['result'].apply(lambda x: 3600 if x > 3600 else x )
+aggregatedData['result'] = aggregatedData['result'].apply(lambda x: -1 if x >= 4000 else x)
+
+mask = aggregatedData['result'] != -1
+aggregatedData = aggregatedData[mask]
+
 aggregatedData = aggregatedData.drop(columns=['ArrivalDiff', 'DepartureDiff'])
-aggregatedData.to_csv("C:/DEV/hadoop/clean_data.csv", sep=';', header = True, float_format='%.15f')
-aggregatedData[['result']].head(10)
+aggregatedData.to_csv("C:/DEV/hadoop/clean_data.csv", sep=';', header=True, float_format='%.15f')
 
+print(aggregatedData['result'].min())
+print(aggregatedData['result'].max())
 
-# In[8]:
-
+aggregatedData.head(10)
 
 normalizeddData = aggregatedData.copy(deep=True)
 standardizedData = aggregatedData.copy(deep=True)
-
-
-# In[9]:
-
 
 data = normalizeddData[['result']].values
 normalizeddData[['result']] = keras.utils.normalize(
     data,
     axis=0,
-    order=2
+    order=10
 )
-normalizeddData.to_csv("C:/DEV/hadoop/normalized_data.csv", sep=';', header = True, float_format='%.15f')
+normalizeddData.to_csv("C:/DEV/hadoop/normalized_data.csv", sep=';', header=True, float_format='%.15f')
 normalizeddData[['result']].head(10)
-
-
-# In[10]:
-
+print(normalizeddData['result'].min())
+print(normalizeddData['result'].max())
+normalizeddData['result'].plot(kind='kde')
 
 scaler = StandardScaler()
 scaler = scaler.fit(standardizedData[['result']])
 
 normalized = scaler.transform(standardizedData[['result']])
 standardizedData['result'] = normalized
-standardizedData[['result']].head(10)
+standardizedData['result'].plot(kind='kde')
+print(standardizedData['result'].min())
+print(standardizedData['result'].max())
 
-
-# In[11]:
-
-
-normalizeddData.to_csv("C:/DEV/hadoop/standardized_data.csv", sep=';', header = True, float_format='%.15f')
-
+normalizeddData.to_csv("C:/DEV/hadoop/standardized_data.csv", sep=';', header=True, float_format='%.15f')
