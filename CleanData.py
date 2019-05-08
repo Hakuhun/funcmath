@@ -31,16 +31,15 @@ cleanData['Temperature'] = pd.to_numeric(cleanData['Temperature'])
 cleanData['WindIntensity'] = pd.to_numeric(cleanData['WindIntensity'])
 cleanData['RainIntensity'] = pd.to_numeric(cleanData['RainIntensity'])
 cleanData['SnowIntesity'] = pd.to_numeric(cleanData['SnowIntesity'])
-cleanData.head(10)
 
-aggregatedData = cleanData.groupby(['CurrentTime', 'RouteID', 'TripID'], as_index=False).agg({
+aggregatedData = cleanData.groupby(['CurrentTime', 'RouteID', 'TripID']).agg({
     'ArrivalDiff': 'mean',
     'DepartureDiff': 'mean',
     'Temperature': 'mean',
     'WindIntensity': 'mean',
     'RainIntensity': 'mean',
     'SnowIntesity': 'mean',
-})
+}).reset_index()
 
 aggregatedData['result'] = aggregatedData[['ArrivalDiff', 'DepartureDiff']].mean(axis=1)
 aggregatedData = aggregatedData.drop(columns=['ArrivalDiff', 'DepartureDiff', 'TripID'])
@@ -49,11 +48,8 @@ aggregatedData = aggregatedData[aggregatedData['result'] > 60]
 
 aggregatedData['RouteID'] = aggregatedData['RouteID'].apply(lambda row: pd.to_numeric(row.split('_')[1]))
 
+aggregatedData.to_csv("C:/DEV/hadoop/clean_data.csv", sep=';', header=True, float_format='%.15f', index=False)
+
+print("A megtalálható legkissebb érték most: {0}".format( aggregatedData['result'].min()))
 print("A megtalálható legnagybb érték most: {0}".format( aggregatedData['result'].max()))
-
-aggregatedData.to_csv("C:/DEV/hadoop/clean_data.csv", sep=';', header=True, float_format='%.15f')
-
-print(aggregatedData['result'].min())
-print(aggregatedData['result'].max())
-
-aggregatedData.head(10)
+print("ADatok tisztítása kész!")

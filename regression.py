@@ -11,13 +11,14 @@ from keras.wrappers.scikit_learn import KerasRegressor
 dataPath = "C:/DEV/hadoop/clean_data.csv"
 
 dataset = pd.read_csv(dataPath, sep=';', header=0)
+#dataset = dataset.drop(columns=['CurrentTime', 'RouteID'], axis=0)
 
 # check the data distribution
 sns.pairplot(dataset)
 
 # creating training set
 x = dataset.to_numpy()[:, 0:6]
-y = dataset.to_numpy()[:, 7]
+y = dataset.to_numpy()[:, 6]
 y = np.reshape(y, (-1, 1))
 
 # normalizing the values
@@ -45,7 +46,7 @@ def build_regressor():
     return regressor
 
 
-regressor = KerasRegressor(build_fn=build_regressor, batch_size=100, epochs=1000)
+regressor = KerasRegressor(build_fn=build_regressor, batch_size=20, epochs=100)
 
 print(y_train.shape)
 print(X_train.shape)
