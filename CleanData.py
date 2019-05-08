@@ -1,6 +1,4 @@
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-import keras
 import locale
 
 locale.setlocale(locale.LC_ALL, "hu_HU")
@@ -35,7 +33,7 @@ cleanData['RainIntensity'] = pd.to_numeric(cleanData['RainIntensity'])
 cleanData['SnowIntesity'] = pd.to_numeric(cleanData['SnowIntesity'])
 cleanData.head(10)
 
-aggregatedData = cleanData.groupby(['CurrentTime', 'RouteID', 'TripID']).agg({
+aggregatedData = cleanData.groupby(['CurrentTime', 'RouteID', 'TripID'], as_index=False).agg({
     'ArrivalDiff': 'mean',
     'DepartureDiff': 'mean',
     'Temperature': 'mean',
@@ -45,41 +43,17 @@ aggregatedData = cleanData.groupby(['CurrentTime', 'RouteID', 'TripID']).agg({
 })
 
 aggregatedData['result'] = aggregatedData[['ArrivalDiff', 'DepartureDiff']].mean(axis=1)
-aggregatedData['result'] = aggregatedData['result'].apply(lambda x: -1 if x >= 4000 else x)
+aggregatedData = aggregatedData.drop(columns=['ArrivalDiff', 'DepartureDiff', 'TripID'])
+aggregatedData = aggregatedData[aggregatedData['result'] < 3500]
+aggregatedData = aggregatedData[aggregatedData['result'] > 60]
 
-mask = aggregatedData['result'] != -1
-aggregatedData = aggregatedData[mask]
+aggregatedData['RouteID'] = aggregatedData['RouteID'].apply(lambda row: pd.to_numeric(row.split('_')[1]))
 
-aggregatedData = aggregatedData.drop(columns=['ArrivalDiff', 'DepartureDiff'])
+print("A megtalálható legnagybb érték most: {0}".format( aggregatedData['result'].max()))
+
 aggregatedData.to_csv("C:/DEV/hadoop/clean_data.csv", sep=';', header=True, float_format='%.15f')
 
 print(aggregatedData['result'].min())
 print(aggregatedData['result'].max())
 
 aggregatedData.head(10)
-
-normalizeddData = aggregatedData.copy(deep=True)
-standardizedData = aggregatedData.copy(deep=True)
-
-data = normalizeddData[['result']].values
-normalizeddData[['result']] = keras.utils.normalize(
-    data,
-    axis=0,
-    order=10
-)
-normalizeddData.to_csv("C:/DEV/hadoop/normalized_data.csv", sep=';', header=True, float_format='%.15f')
-normalizeddData[['result']].head(10)
-print(normalizeddData['result'].min())
-print(normalizeddData['result'].max())
-normalizeddData['result'].plot(kind='kde')
-
-scaler = StandardScaler()
-scaler = scaler.fit(standardizedData[['result']])
-
-normalized = scaler.transform(standardizedData[['result']])
-standardizedData['result'] = normalized
-standardizedData['result'].plot(kind='kde')
-print(standardizedData['result'].min())
-print(standardizedData['result'].max())
-
-normalizeddData.to_csv("C:/DEV/hadoop/standardized_data.csv", sep=';', header=True, float_format='%.15f')

@@ -15,11 +15,6 @@ from keras.layers import Dense
 
 dataPath = "C:/DEV/hadoop/normalized_data.csv"
 
-
-# In[2]:
-
-
-get_ipython().run_line_magic('matplotlib', 'inline')
 dataset = pd.read_csv(dataPath, sep=';', header=0)
 dataset = dataset.drop(columns=['TripID'])
 dataset['RouteID'] = dataset['RouteID'].apply(lambda row: pd.to_numeric(row.split('_')[1]))
