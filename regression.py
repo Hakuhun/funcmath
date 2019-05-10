@@ -39,7 +39,7 @@ def build_regressor():
     regressor = Sequential()
     regressor.add(Dense(12, input_dim=6, kernel_initializer='normal', activation='relu'))
     regressor.add(Dense(8, activation='relu'))
-    regressor.add(Dense(1, activation='linear'))
+    regressor.add(Dense(1, activation='sigmoid'))
 
     optimizer = keras.optimizers.adam(amsgrad=True)
     regressor.compile(optimizer=optimizer, loss='mse', metrics=['mae', 'accuracy'])
