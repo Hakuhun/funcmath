@@ -71,29 +71,14 @@ def build_regressor():
     return regressor
 
 
-# In[8]:
-
-
 from keras.wrappers.scikit_learn import KerasRegressor
 regressor = KerasRegressor(build_fn=build_regressor, batch_size=2,epochs=100)
 print(y_train.shape)
 print(X_train.shape)
 
-
-# In[9]:
-
-
 results=regressor.fit(X_train,y_train)
 
-
-# In[10]:
-
-
 y_pred= regressor.predict(X_test)
-
-
-# In[11]:
-
 
 fig, ax = plt.subplots()
 ax.scatter(y_test, y_pred)
