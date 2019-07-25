@@ -30,7 +30,13 @@ cleanData['CurrentTime'] = cleanData['CurrentTime'].dt.hour
 cleanData['Temperature'] = pd.to_numeric(cleanData['Temperature'])
 cleanData['WindIntensity'] = pd.to_numeric(cleanData['WindIntensity'])
 cleanData['RainIntensity'] = pd.to_numeric(cleanData['RainIntensity'])
+
 cleanData['SnowIntesity'] = pd.to_numeric(cleanData['SnowIntesity'])
+
+cleanData['min'] = cleanData['result']
+cleanData['max'] = cleanData['result']
+cleanData['median'] = cleanData['result']
+
 
 aggregatedData = cleanData.groupby(['CurrentTime', 'RouteID', 'TripID']).agg({
     'ArrivalDiff': 'mean',
@@ -39,6 +45,9 @@ aggregatedData = cleanData.groupby(['CurrentTime', 'RouteID', 'TripID']).agg({
     'WindIntensity': 'mean',
     'RainIntensity': 'mean',
     'SnowIntesity': 'mean',
+    'min': 'min',
+    'max':'max',
+    'median':'median'
 }).reset_index()
 
 aggregatedData['result'] = aggregatedData[['ArrivalDiff', 'DepartureDiff']].mean(axis=1)
